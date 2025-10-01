@@ -29,4 +29,6 @@ groups:
 - name: ssl-expired-alerts
   rules:
     - alert: ssl-expired-alerts
-      expr: (probe_ssl_earliest_cert_expiry{job="blackbox-probe", instance="https://git.demo.opsta.co.th"} - time()) / 86400 <= 90
+      expr: (probe_ssl_earliest_cert_expiry{job="blackbox-probe", instance="https://git.demo.opsta.co.th"} - time()) / 86400 < 30
+    - alert: app-demo-alerts
+      expr: (probe_success==0) or probe_http_duration_seconds{phase='processing'} > 1
