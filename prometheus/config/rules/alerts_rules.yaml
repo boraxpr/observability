@@ -1,0 +1,8 @@
+# Alerting rules exist in a rule group. Rules within a group are run sequentially at a evaluation time.
+groups:
+- name: node-exporter-alerts
+  rules:
+  - alert: NodeExporterDown
+    # Query up with label job="node-exporter" to see if it down or not
+    expr: up{job="node-exporter"} == 0
+    for: 1m
