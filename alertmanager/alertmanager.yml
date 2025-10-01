@@ -1,16 +1,52 @@
 route:
-  group_by: ['alertname']
-  group_wait: 30s
-  group_interval: 5m
-  repeat_interval: 1h
-  receiver: 'web.hook'
+  # When a new group of alerts is created by an incoming alert, wait at
+  # least 'group_wait' to send the initial notification.
+  # This way ensures that you get multiple alerts for the same group that start
+  # firing shortly after another are batched together on the first
+  # notification.
+  group_wait: 10s
+
+  # When the first notification was sent, wait 'group_interval' to send a batch
+  # of new alerts that started firing for that group.
+  group_interval: 30s
+
+  # If an alert has successfully been sent, wait 'repeat_interval' to
+  # resend them.
+  repeat_interval: 30m
+
+  # A default receiver
+  receiver: 'webhook.default'
+
+  # All the above attributes are inherited by all child routes and can
+  # overwritten on each.
+  routes:
+  # Use receiver webhook.warning when severity=warning
+  - receiver: 'webhook.warning'
+    matchers:
+    - service="node-exporter"
+    - severity="warning"
+  # Use receiver webhook.warning when severity=critical
+  - receiver: 'webhook.critical'
+    matchers:
+    - service="node-exporter"
+    - severity="critical"
+
+# Receivers from hooks
 receivers:
-  - name: 'web.hook'
+  # Default receiver
+  - name: 'webhook.default'
     webhook_configs:
-      - url: 'http://127.0.0.1:5001/'
-inhibit_rules:
-  - source_match:
-      severity: 'critical'
-    target_match:
-      severity: 'warning'
-    equal: ['alertname', 'dev', 'instance']
+      # Send hook to webhook.site
+      - url: 'https://webhook.site/ae9bbe50-4d62-4ae7-82a6-5f7f9ec473f8'
+        # Send hook when alert is resolved
+        send_resolved: true
+  # Receiver for warning severity
+  - name: 'webhook.warning'
+    webhook_configs:
+      - url: 'https://webhook.site/ae9bbe50-4d62-4ae7-82a6-5f7f9ec473f8'
+        send_resolved: true
+  # Receiver for critical severity
+  - name: 'webhook.critical'
+    webhook_configs:
+      - url: 'https://webhook.site/ae9bbe50-4d62-4ae7-82a6-5f7f9ec473f8'
+        send_resolved: true
