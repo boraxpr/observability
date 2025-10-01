@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "menuEnabled": true
+  },
+  "monitor": {
+    "menuEnabled": true
+  }
+}
