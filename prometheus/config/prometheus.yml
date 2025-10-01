@@ -51,6 +51,12 @@ scrape_configs:
         - "http://git.demo.opsta.co.th"     # Target to probe with HTTP.
         - "https://git.demo.opsta.co.th"    # Target to probe with HTTPS.
         - "http://unreach.opsta.co.th"      # Unreachable target to probe with HTTP.
+        - http://app-demo-1:8080/api/foo
+        - http://app-demo-1:8080/api/bar
+        - http://app-demo-2:8080/api/foo
+        - http://app-demo-2:8080/api/bar
+        - http://app-demo-3:8080/api/foo
+        - http://app-demo-3:8080/api/bar
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
