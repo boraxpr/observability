@@ -25,3 +25,8 @@ groups:
     labels:
       service: node-exporter
       severity: critical
+
+- name: ssl-expired-alerts
+  rules:
+    - alert: ssl-expired-alerts
+      expr: (probe_ssl_earliest_cert_expiry{job="blackbox-exporter", instance="https://git.demo.opsta.co.th"} - time()) / 86400 <= 90
