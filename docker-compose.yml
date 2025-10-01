@@ -22,3 +22,44 @@ services:
     - --web.external-url=https://9090-${WEB_HOST}
     networks:
       - monitoring
+  node-exporter:
+    container_name: node-exporter
+    image: prom/node-exporter:v1.9.1
+    volumes:
+      - '/proc:/host/proc:ro'
+      - '/sys:/host/sys:ro'
+      - '/:/rootfs:ro'
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+
+  app-demo-1:
+    container_name: app-demo-1
+    image: julius/prometheus-demo-service:0.12.0
+    ports:
+      - "10001:8080"
+    networks:
+      - monitoring
+
+  app-demo-2:
+    container_name: app-demo-2
+    image: julius/prometheus-demo-service:0.12.0
+    ports:
+      - "10002:8080"
+    networks:
+      - monitoring
+
+  app-demo-3:
+    container_name: app-demo-3
+    image: julius/prometheus-demo-service:0.12.0
+    ports:
+      - "10003:8080"
+    networks:
+      - monitoring
+
