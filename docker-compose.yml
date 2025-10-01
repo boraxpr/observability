@@ -1,0 +1,24 @@
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v3.6.0
+    user: "1000:1000"
+    volumes:
+      - ./prometheus/data:/prometheus
+      - ./prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/config/rules:/etc/prometheus/rules/
+    ports:
+      - 9090:9090
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.path=/prometheus
+    - --web.console.libraries=/usr/share/prometheus/console_libraries
+    - --web.console.templates=/usr/share/prometheus/consoles
+    - --web.enable-lifecycle
+    - --web.external-url=https://9090-${WEB_HOST}
+    networks:
+      - monitoring

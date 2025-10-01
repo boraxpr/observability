@@ -1,0 +1,10 @@
+grafana/data
+prometheus/data
+alertmanager/data
+webhook/logs
+loki/data
+jaeger/data
+__pycache__
+*.pyc
+*.tfstate*
+.terraform*
