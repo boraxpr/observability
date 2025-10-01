@@ -40,3 +40,21 @@ scrape_configs:
         - "app-demo-1:8080"
         - "app-demo-2:8080"
         - "app-demo-3:8080"
+
+  - job_name: 'blackbox-probe'
+    metrics_path: /probe # Don't scrape /metrics, but /probe on the Blackbox Exporter.
+    params:
+      module:
+        - http_2xx # Select the "http_2xx" module configured in the Blackbox Exporter.
+    static_configs:
+      - targets:
+        - "http://git.demo.opsta.co.th"     # Target to probe with HTTP.
+        - "https://git.demo.opsta.co.th"    # Target to probe with HTTPS.
+        - "http://unreach.opsta.co.th"      # Unreachable target to probe with HTTP.
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__address__]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115 # Blackbox exporter address.

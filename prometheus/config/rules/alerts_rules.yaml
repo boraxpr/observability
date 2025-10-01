@@ -5,4 +5,23 @@ groups:
   - alert: NodeExporterDown
     # Query up with label job="node-exporter" to see if it down or not
     expr: up{job="node-exporter"} == 0
+    # Wait before firing alert for 1 minute
     for: 1m
+- name: node-exporter-alerts-label
+  rules:
+  # Rule to alert when node-exporter is down for 30 seconds
+  - alert: NodeExporterDown30Secs
+    expr: up{job="node-exporter"} == 0
+    for: 30s
+    # Set label service name and severity warning to alert
+    labels:
+      service: node-exporter
+      severity: warning
+  # Rule to alert when node-exporter is down for a minute
+  - alert: NodeExporterDown1Min
+    expr: up{job="node-exporter"} == 0
+    for: 1m
+    # Set label service name and severity critical to alert
+    labels:
+      service: node-exporter
+      severity: critical
