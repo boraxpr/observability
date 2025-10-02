@@ -84,6 +84,7 @@ func main() {
 			1,
 			api.WithAttributes(
 				attribute.String("path", r.URL.Path),
+				attribute.Int("http_code", http_code),
 			),
 		)
 
