@@ -121,5 +121,17 @@ services:
       - '-nginx.scrape-uri=http://nginx/stub_status'
     depends_on:
       - nginx
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
+    container_name: cadvisor
+    privileged: true
+    ports:
+      - 8888:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - monitoring
+
