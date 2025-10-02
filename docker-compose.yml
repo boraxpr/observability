@@ -22,6 +22,7 @@ services:
     - --web.external-url=https://9090-${WEB_HOST}
     networks:
       - monitoring
+
   node-exporter:
     container_name: node-exporter
     image: prom/node-exporter:v1.9.1
@@ -62,6 +63,7 @@ services:
       - "10003:8080"
     networks:
       - monitoring
+
   alertmanager:
     container_name: alertmanager
     image: prom/alertmanager:v0.28.1
@@ -78,6 +80,7 @@ services:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
     networks:
       - monitoring
+
   blackbox-exporter:
     container_name: blackbox-exporter
     image: prom/blackbox-exporter:v0.27.0
@@ -121,6 +124,9 @@ services:
       - '-nginx.scrape-uri=http://nginx/stub_status'
     depends_on:
       - nginx
+    networks:
+      - monitoring
+
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.52.0
     container_name: cadvisor
@@ -173,4 +179,3 @@ services:
     restart: always
     networks:
       - monitoring
-
