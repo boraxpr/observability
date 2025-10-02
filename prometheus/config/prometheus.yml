@@ -33,6 +33,7 @@ scrape_configs:
     static_configs:
       - targets:
         - "node-exporter:9100"
+        - "git.demo.opsta.co.th:9100"
 
   - job_name: "app-demo"
     static_configs:
