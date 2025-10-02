@@ -44,6 +44,13 @@ func main() {
 	// Set Gauge to 1.0 but in metric will show 1
 	gauge.Record(ctx, 1.0)
 
+	// Adding Counter metric
+	counter, _ := meter.Int64Counter(
+		"training_response_total",
+		api.WithDescription("The number of response."),
+	)
+	counter.Add(ctx, 1)
+
 	// Serve Hello World! on /
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Handling " + r.URL.Path + " ...")
