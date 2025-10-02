@@ -49,7 +49,6 @@ func main() {
 		"training_response_total",
 		api.WithDescription("The number of response."),
 	)
-	counter.Add(ctx, 1)
 
 	// Serve Hello World! on /
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +59,8 @@ func main() {
 		if http_code != 200 {
 			log.Println("Request " + r.URL.Path + " failed with HTTP code " + strconv.Itoa(http_code))
 		}
+
+		counter.Add(ctx, 1)
 	})
 
 	// Serve the default Prometheus metrics registry over HTTP on /metrics.
