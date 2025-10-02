@@ -179,3 +179,52 @@ services:
     restart: always
     networks:
       - monitoring
+
+  go-sample:
+    container_name: go-sample
+    hostname: go-sample
+    build:
+      context: ./go-instrumentation
+      args:
+        APP_NAME: sample
+        APP_PORT: 8081
+    environment:
+      APP_PORT: 8081
+    ports:
+      - 8081:8081
+    networks:
+      - monitoring
+
+  go-practice:
+    container_name: go-practice
+    hostname: go-practice
+    build:
+      context: ./go-instrumentation
+      args:
+        APP_NAME: practice
+        APP_PORT: 8082
+    environment:
+      APP_PORT: 8082
+    ports:
+      - 8082:8082
+    networks:
+      - monitoring
+
+  curl:
+    image: curlimages/curl:8.16.0
+    container_name: curl
+    entrypoint:
+      - "watch"
+      - "-n1"
+    command: >
+      curl -s
+        http://go-sample:8081
+        http://go-sample:8081/foo
+        http://go-sample:8081/bar
+        http://go-practice:8082/api/foo
+        http://go-practice:8082/api/bar
+    depends_on:
+      - go-sample
+      - go-practice
+    networks:
+      - monitoring
