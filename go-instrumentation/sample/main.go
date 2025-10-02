@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
@@ -50,6 +51,15 @@ func main() {
 		api.WithDescription("The number of response."),
 	)
 
+	  // Adding Histogram metric
+  histogram, _ := meter.Float64Histogram(
+    "training_http_request_duration_seconds",
+    api.WithDescription("A histogram of the HTTP request durations in seconds."),
+    // Override the default upper bucket bounds for our latency profile.
+    api.WithExplicitBucketBoundaries(0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12),
+  )
+
+
 	// Serve Hello World! on /
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Handling " + r.URL.Path + " ...")
@@ -61,6 +71,12 @@ func main() {
 		}
 
 		counter.Add(ctx, 1)
+
+		  // Set histogram with random timer
+    if http_code == 200 {
+      histogram.Record(ctx, randomTimer())
+    }
+
 	})
 
 	// Serve the default Prometheus metrics registry over HTTP on /metrics.
@@ -90,4 +106,26 @@ func randomHTTPCode(text string) (int, string) {
 		http_text = "HTTP Code: " + strconv.Itoa(http_code)
 	}
 	return http_code, http_text
+}
+
+
+// This function will produce random latency and return latency in seconds
+func randomTimer() float64 {
+  // Create a new timer.
+  start := time.Now()
+
+  // Generate a random number between 0 and 1.
+  randomNumber := rand.Float64()
+  // If the random number is less than 0.8, sleep for a random time between 0 and 0.05 seconds.
+  if randomNumber < 0.9 {
+    sleepSeconds := rand.Float64() * 0.05
+    time.Sleep(time.Duration(sleepSeconds * float64(time.Second)))
+  } else {
+    // Otherwise, sleep for a random time between 0.001 and 3 seconds.
+    sleepSeconds := rand.Float64()*(3-0.001) + 0.001
+    time.Sleep(time.Duration(sleepSeconds * float64(time.Second)))
+  }
+
+  // Return the timer
+  return time.Since(start).Seconds()
 }
