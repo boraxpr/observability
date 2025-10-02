@@ -1,12 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	api "go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/sdk/metric"
+)
+
+const (
+	otelScopeName    = "go-sample"
+	otelScopeVersion = "v1.0.0"
 )
 
 var (
@@ -15,6 +27,23 @@ var (
 )
 
 func main() {
+	ctx := context.Background()
+
+	// The exporter embeds a default OpenTelemetry Reader and
+	// implements prometheus.Collector, allowing it to be used as
+	// both a Reader and Collector.
+	exporter, _ := prometheus.New()
+	provider := metric.NewMeterProvider(metric.WithReader(exporter))
+	meter := provider.Meter(otelScopeName, api.WithInstrumentationVersion(otelScopeVersion))
+
+	// Adding Gauge metric
+	gauge, _ := meter.Float64Gauge(
+		"training_queue_length",
+		api.WithDescription("The number of items in the queue."),
+	)
+	// Set Gauge to 1.0 but in metric will show 1
+	gauge.Record(ctx, 1.0)
+
 	// Serve Hello World! on /
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Handling " + r.URL.Path + " ...")
@@ -26,6 +55,9 @@ func main() {
 		}
 	})
 
+	// Serve the default Prometheus metrics registry over HTTP on /metrics.
+	http.Handle("/metrics", promhttp.Handler())
+
 	// Assign application port to run
 	appPort := os.Getenv("APP_PORT")
 	if appPort == "" {
@@ -34,6 +66,10 @@ func main() {
 
 	log.Println("Starting service on port " + appPort)
 	log.Fatal(http.ListenAndServe(":"+appPort, nil))
+
+	// Handle SIGINT (CTRL+C) gracefully.
+	ctx, _ = signal.NotifyContext(ctx, os.Interrupt)
+	<-ctx.Done()
 }
 
 // Function to random HTTP code
