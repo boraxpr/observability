@@ -223,8 +223,97 @@ services:
         http://go-sample:8081/bar
         http://go-practice:8082/api/foo
         http://go-practice:8082/api/bar
+        http://go-log:8083
+        http://go-log:8083/foo
+        http://go-log:8083/bar
     depends_on:
       - go-sample
       - go-practice
+      - go-log
+    networks:
+      - monitoring
+  loki:
+    container_name: loki
+    image: grafana/loki:3.5.5
+    ports:
+      - 3100:3100
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/local-config.yaml:/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+
+  promtail-1:
+    container_name: promtail-1
+    hostname: promtail-1
+    image: grafana/promtail:3.5.5
+    ports:
+      - 9081:9080
+    command:
+      - -config.file=/etc/promtail/config.yml
+      - -config.expand-env=true
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml
+      - /var/log:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - monitoring
+  promtail-2:
+    container_name: promtail-2
+    hostname: promtail-2
+    image: grafana/promtail:3.5.5
+    ports:
+      - 9082:9080
+    command:
+      - -config.file=/etc/promtail/config.yml
+      - -config.expand-env=true
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml
+      - /var/log:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - monitoring
+
+  flog-common:
+    container_name: flog-common
+    image: mingrammer/flog:0.4.3
+    command:
+      - -d=3s
+      - -l
+      - -f=apache_common
+    networks:
+      - monitoring
+  flog-combined:
+    container_name: flog-combined
+    image: mingrammer/flog:0.4.3
+    command:
+      - -d=3s
+      - -l
+      - -f=apache_combined
+    networks:
+      - monitoring
+  flog-error:
+    container_name: flog-error
+    image: mingrammer/flog:0.4.3
+    command:
+      - -d=15s
+      - -l
+      - -f=apache_error
+    networks:
+      - monitoring
+
+  go-log:
+    container_name: go-log
+    hostname: go-log
+    build:
+      context: ./go-instrumentation
+      args:
+        APP_NAME: log
+        APP_PORT: 8083
+    environment:
+      APP_PORT: 8083
+    ports:
+      - 8083:8083
     networks:
       - monitoring
