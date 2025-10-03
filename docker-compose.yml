@@ -20,6 +20,9 @@ services:
     - --web.console.templates=/usr/share/prometheus/consoles
     - --web.enable-lifecycle
     - --web.external-url=https://9090-${WEB_HOST}
+    - --web.enable-remote-write-receiver
+    - --enable-feature=native-histograms
+
     networks:
       - monitoring
 
@@ -430,11 +433,35 @@ services:
       POSTGRES_DB: fastapidb
       POSTGRES_SERVER: postgres
       REDIS_SERVER: redis
+      OTEL_RESOURCE_ATTRIBUTES: "host.name=fastapi"
+      OTEL_PYTHON_LOG_CORRELATION: true
+      OTEL_PYTHON_LOG_FORMAT: time="%(asctime)s" level="%(levelname)s" name="%(name)s" filename="%(filename)s:%(lineno)d" trace_id=%(otelTraceID)s span_id=%(otelSpanID)s trace_flags=%(otelTraceSampled)02d resource.service.name=%(otelServiceName)s msg="%(message)s"
+
     depends_on:
       - otel-collector
     command:
       - opentelemetry-instrument
       - python
       - main.py
+    networks:
+      - monitoring
+
+  k6:
+    container_name: k6
+    image: grafana/k6:1.3.0
+    volumes:
+      - ./k6:/scripts
+    command:
+      - run
+      - --vus=3
+      - --duration=1h
+      - -o=experimental-prometheus-rw
+      - /scripts/k6-script-todo.js
+    environment:
+      TARGET_SERVER: fastapi:8000
+      K6_PROMETHEUS_RW_SERVER_URL: http://prometheus:9090/api/v1/write
+      K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM: true
+    depends_on:
+      - prometheus
     networks:
       - monitoring
