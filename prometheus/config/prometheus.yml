@@ -115,3 +115,8 @@ scrape_configs:
     static_configs:
       - targets:
         - "hotrod:8080"
+
+  - job_name: "fastapi"
+    static_configs:
+      - targets:
+        - "fastapi:8000"

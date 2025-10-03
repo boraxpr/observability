@@ -18,6 +18,10 @@ from sqlalchemy.orm import Session
 
 from todo_app import crud, models, schemas
 from todo_app.database import SessionLocal, engine
+# https://github.com/perdy/starlette-prometheus
+from starlette.applications import Starlette
+from starlette_prometheus import metrics, PrometheusMiddleware
+
 
 
 """
@@ -46,6 +50,8 @@ r = redis.Redis(host=REDIS_SERVER, port=int(REDIS_PORT), db=0)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+app.add_middleware(PrometheusMiddleware)
+app.add_route("/metrics/", metrics)
 
 app.add_middleware(
   CORSMiddleware,
