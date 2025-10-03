@@ -16,9 +16,6 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
-  opencensus:
-    endpoint: 0.0.0.0:55678
-
   # Collect own metrics
   prometheus:
     config:
@@ -67,12 +64,12 @@ service:
   pipelines:
 
     traces:
-      receivers: [otlp, opencensus, jaeger, zipkin]
+      receivers: [otlp, jaeger, zipkin]
       processors: [memory_limiter, batch]
       exporters: [otlp, spanmetrics, debug]
 
     metrics:
-      receivers: [otlp, spanmetrics, opencensus, prometheus]
+      receivers: [otlp, spanmetrics, prometheus]
       processors: [memory_limiter, batch]
       exporters: [prometheus, debug]
 
