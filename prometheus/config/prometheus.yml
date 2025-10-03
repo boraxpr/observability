@@ -100,3 +100,18 @@ scrape_configs:
         target_label: instance
         regex: '(.*):.*'
         replacement: '${1}'
+
+  - job_name: "jaeger"
+    static_configs:
+      - targets:
+        - "jaeger:14269"
+
+  - job_name: "otel-collector"
+    static_configs:
+      - targets:
+        - "otel-collector:8889"
+
+  - job_name: "hotrod"
+    static_configs:
+      - targets:
+        - "hotrod:8080"

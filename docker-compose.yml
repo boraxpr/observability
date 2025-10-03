@@ -317,3 +317,58 @@ services:
       - 8083:8083
     networks:
       - monitoring
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.73.0
+    user: "1000:1000"
+    ports:
+      - "14269:14269"
+      - "16686:16686"
+    volumes:
+      - "./jaeger/jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
+      - "./jaeger/data/:/badger/"
+    environment:
+      QUERY_UI_CONFIG: /etc/jaeger/jaeger-ui.json
+      LOG_LEVEL: debug
+      METRICS_STORAGE_TYPE: prometheus
+      PROMETHEUS_SERVER_URL: http://prometheus:9090
+      PROMETHEUS_QUERY_NORMALIZE_CALLS: true
+      PROMETHEUS_QUERY_NORMALIZE_DURATION: true
+      SPAN_STORAGE_TYPE: badger
+      BADGER_EPHEMERAL: false
+      BADGER_DIRECTORY_VALUE: /badger/data
+      BADGER_DIRECTORY_KEY: /badger/key
+    networks:
+      - monitoring
+
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:0.136.0
+    volumes:
+      - "./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml"
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - jaeger
+    networks:
+      - monitoring
+
+  hotrod:
+    container_name: hotrod
+    hostname: hotrod
+    image: jaegertracing/example-hotrod:1.73.0
+    depends_on:
+      - otel-collector
+    ports:
+      - "8088:8080"
+    command:
+      - all
+      - --fix-disable-db-conn-mutex
+      - --fix-route-worker-pool-size=10
+      - --fix-db-query-delay=100ms
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+    networks:
+      - monitoring
