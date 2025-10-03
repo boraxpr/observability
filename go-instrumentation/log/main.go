@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	api "go.opentelemetry.io/otel/metric"
@@ -26,6 +26,8 @@ const (
 var (
 	// Array of random HTTP code
 	frequent_http_code = [6]int{301, 302, 400, 403, 404, 500}
+
+	logger = logrus.New()
 )
 
 func main() {
@@ -62,7 +64,7 @@ func main() {
 
 	// Serve every paths
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Handling " + r.URL.Path + " ...")
+		logger.Info("Handling " + r.URL.Path + " ...")
 		// Return hello world when request root path
 		text := "Hello World!"
 		// Return path when request other than root path
@@ -74,9 +76,7 @@ func main() {
 		http_code, http_text := randomHTTPCode(text)
 		w.WriteHeader(http_code)
 		fmt.Fprintln(w, http_text)
-		if http_code != 200 {
-			log.Println("Request " + r.URL.Path + " failed with HTTP code " + strconv.Itoa(http_code))
-		}
+		logRequest(http_code, r.URL.Path)
 
 		// Increasing counter when user request this page
 		counter.Add(
@@ -106,11 +106,10 @@ func main() {
 	// Assign application port to run
 	appPort := os.Getenv("APP_PORT")
 	if appPort == "" {
-		appPort = "8081"
+		appPort = "8083"
 	}
-
-	log.Println("Starting service on port " + appPort)
-	log.Fatal(http.ListenAndServe(":"+appPort, nil))
+	logger.Info("Starting service on port " + appPort)
+	logger.Fatal(http.ListenAndServe(":"+appPort, nil))
 
 	// Handle SIGINT (CTRL+C) gracefully.
 	ctx, _ = signal.NotifyContext(ctx, os.Interrupt)
@@ -148,4 +147,23 @@ func randomTimer() float64 {
 
 	// Return the timer
 	return time.Since(start).Seconds()
+}
+func init() {
+	logger.Formatter = &logrus.TextFormatter{
+		DisableColors: true,
+	}
+}
+
+func logRequest(http_code int, path string) {
+	if http_code >= 400 {
+		logger.WithFields(logrus.Fields{
+			"path": path,
+			"code": http_code,
+		}).Error("request failed")
+	} else {
+		logger.WithFields(logrus.Fields{
+			"path": path,
+			"code": http_code,
+		}).Info("request success")
+	}
 }
