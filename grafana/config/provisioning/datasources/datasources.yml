@@ -17,3 +17,28 @@ datasources:
     jsonData:
       prometheusType: Prometheus
       prometheusVersion: 2.50.1
+  # Loki datasources
+  - uid: loki
+    orgId: 1
+    name: loki
+    type: loki
+    url: http://loki:3100
+    jsonData:
+      derivedFields:
+        - datasourceUid: jaeger
+          matcherRegex: '"trace_id": "([A-Za-z0-9]+)", "span_id"'
+          name: HotRod
+          url: $${__value.raw}
+  # Jaeger datasources
+  - uid: jaeger
+    orgId: 1
+    name: jaeger
+    type: jaeger
+    url: http://jaeger:16686
+    jsonData:
+      nodeGraph:
+        enabled: true
+      tracesToLogsV2:
+        customQuery: true
+        datasourceUid: loki
+        query: '{container=~"$${__span.tags["host.name"]}"} |~ "$${__span.traceId}" |~ "$${__span.spanId}"'
