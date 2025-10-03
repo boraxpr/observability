@@ -381,7 +381,7 @@ services:
     volumes:
       - "./locust/:/locust/"
     environment:
-      LOCUST_LOCUSTFILE: "/locust/locust_prom.py"
+      LOCUST_LOCUSTFILE: "/locust/locust_fastapi.py"
       LOCUST_MODE_MASTER: True
     networks:
       - monitoring
@@ -410,5 +410,31 @@ services:
       LOCUST_HOST: http://locust-master:8089
     depends_on:
       - locust-master
+    networks:
+      - monitoring
+      
+  fastapi:
+    container_name: fastapi
+    hostname: fastapi
+    build: ./python-fastapi/
+    ports:
+      - 8001:8000
+    environment:
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: prometheus
+      OTEL_SERVICE_NAME: fastapi
+      OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      POSTGRES_USER: fastapiuser
+      POSTGRES_PASSWORD: fastapipass
+      POSTGRES_DB: fastapidb
+      POSTGRES_SERVER: postgres
+      REDIS_SERVER: redis
+    depends_on:
+      - otel-collector
+    command:
+      - opentelemetry-instrument
+      - python
+      - main.py
     networks:
       - monitoring
