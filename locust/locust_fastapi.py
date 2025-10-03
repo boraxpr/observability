@@ -20,21 +20,21 @@ class QuickstartUser(HttpUser):
   def cpu_task(self):
     self.client.get("/cpu_task", name="get /cpu_task")
 
-  @task(3)
-  def random_sleep(self):
-    self.client.get("/random_sleep", name="get random_sleep")
+  # @task(3)
+  # def random_sleep(self):
+  #   self.client.get("/random_sleep", name="get random_sleep")
 
-  @task(10)
-  def random_status(self):
-    self.client.get("/random_status", name="get /random_status")
+  # @task(10)
+  # def random_status(self):
+  #   self.client.get("/random_status", name="get /random_status")
 
-  @task(3)
-  def chain(self):
-    self.client.get("/chain", name="get /chain")
+  # @task(3)
+  # def chain(self):
+  #   self.client.get("/chain", name="get /chain")
 
-  @task(1)
-  def error_test(self):
-    self.client.get("/error_test", name="get /error_test")
+  # @task(1)
+  # def error_test(self):
+  #   self.client.get("/error_test", name="get /error_test")
 
   @task(1)
   def error(self):
