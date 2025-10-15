@@ -1,6 +1,7 @@
 grafana/data
 prometheus/data
 alertmanager/data
+alloy/data-alloy
 webhook/logs
 loki/data
 jaeger/data
