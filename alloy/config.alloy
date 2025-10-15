@@ -1,0 +1,25 @@
+prometheus.exporter.self "default" {
+}
+
+prometheus.scrape "metamonitoring" {
+  targets    = prometheus.exporter.self.default.targets
+  forward_to = [prometheus.remote_write.default.receiver]
+}
+
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/push"
+  }
+}
+
+logging {
+  level    = "info"
+  format   = "json"
+  write_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

@@ -485,3 +485,14 @@ services:
       - "6379:6379"
     networks:
       - monitoring
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    command: ["run", "/etc/alloy/config.alloy"]
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+    ports:
+      - "9080:9080"     # Alloy HTTP endpoint
+    restart: unless-stopped
+    networks:
+      - monitoring
