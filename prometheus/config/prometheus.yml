@@ -126,3 +126,9 @@ scrape_configs:
     static_configs:
       - targets:
         - "locust-exporter:9191"
+  # Pull method 
+  # - job_name: "alloy"
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets:
+  #       - "alloy:12345"
