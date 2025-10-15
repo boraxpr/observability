@@ -488,11 +488,17 @@ services:
   alloy:
     image: grafana/alloy:latest
     container_name: alloy
-    command: ["run", "/etc/alloy/config.alloy"]
+    command:
+      - run 
+      # - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/data-alloy
+      - --disable-reporting=true
+      - /etc/alloy/config.alloy
     volumes:
-      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - ./alloy/data-alloy:/data-alloy
     ports:
-      - "9080:9080"     # Alloy HTTP endpoint
+      - "12345:12345"     # Alloy HTTP endpoint
     restart: unless-stopped
     networks:
       - monitoring
