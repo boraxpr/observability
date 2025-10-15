@@ -8,7 +8,7 @@ prometheus.scrape "metamonitoring" {
 
 prometheus.remote_write "default" {
   endpoint {
-    url = "http://prometheus:9090/api/v1/push"
+    url = "http://prometheus:9090/api/v1/write"
   }
 }
 
