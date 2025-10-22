@@ -23,3 +23,51 @@ loki.write "default" {
     url = "http://loki:3100/loki/api/v1/push"
   }
 }
+
+otelcol.receiver.otlp "app1" {
+    http {
+        endpoint = "0.0.0.0:8002"
+  }
+  	output {
+		metrics = [otelcol.processor.batch.app1.input]
+		logs    = [otelcol.processor.batch.app1.input]
+		traces  = [otelcol.processor.batch.app1.input]
+	}
+}
+
+otelcol.processor.batch "app1" {
+  	output {
+		metrics = [otelcol.exporter.otlp.app1.input]
+		logs    = [otelcol.exporter.otlp.app1.input]
+		traces  = [otelcol.exporter.otlp.app1.input]
+	}
+}
+
+otelcol.exporter.loki "app1" {
+  forward_to = [loki.write.app1.receiver]
+}
+
+loki.write "app1" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+otelcol.exporter.prometheus "app1" {
+  forward_to = [prometheus.remote_write.app1.receiver]
+}
+
+prometheus.remote_write "app1" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+otelcol.exporter.otlp "app1" {
+  client {
+    endpoint = "http://jaeger:4318"
+    tls {
+      insecure = true
+    }
+  }
+}
