@@ -1,0 +1,10 @@
+httpx
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+redis
+opentelemetry-distro==0.48b0
+opentelemetry-exporter-otlp==1.27.0
+opentelemetry-exporter-prometheus==0.48b0
+starlette-prometheus
