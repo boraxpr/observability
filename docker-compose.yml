@@ -14,14 +14,14 @@ services:
     ports:
       - 9090:9090
     command:
-    - --config.file=/etc/prometheus/prometheus.yml
-    - --storage.tsdb.path=/prometheus
-    - --web.console.libraries=/usr/share/prometheus/console_libraries
-    - --web.console.templates=/usr/share/prometheus/consoles
-    - --web.enable-lifecycle
-    - --web.external-url=https://9090-${WEB_HOST}
-    - --web.enable-remote-write-receiver
-    - --enable-feature=native-histograms
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+      - --web.external-url=https://9090-${WEB_HOST}
+      - --web.enable-remote-write-receiver
+      - --enable-feature=native-histograms
 
     networks:
       - monitoring
@@ -98,6 +98,13 @@ services:
     #   - 3000:3000
     environment:
       GF_SERVER_DOMAIN: 9000-${WEB_HOST}
+      GF_AUTH_PROXY_ENABLED: true
+      GF_AUTH_PROXY_ENABLE: =true
+      GF_AUTH_PROXY_HEADER_NAME: X-WEBAUTH-USER
+      GF_AUTH_PROXY_HEADER_PROPERTY: username #or 'email'
+      GF_AUTH_PROXY_AUTO_SIGN_UP: true
+      GF_AUTH_PROXY_WHITELIST: "127.0.0.1,172.18.0.0/16"
+      GF_AUTH_PROXY_ENABLE_LOGIN_TOKEN: true
     volumes:
       - ./grafana/data/:/var/lib/grafana
       - ./grafana/config/:/etc/grafana/
@@ -380,7 +387,7 @@ services:
     container_name: locust-master
     image: locustio/locust:2.41.3
     ports:
-     - "8089:8089"
+      - "8089:8089"
     volumes:
       - "./locust/:/locust/"
     environment:
@@ -388,7 +395,7 @@ services:
       LOCUST_MODE_MASTER: True
     networks:
       - monitoring
-  
+
   locust-worker:
     container_name: locust-worker
     image: locustio/locust:2.41.3
@@ -415,7 +422,7 @@ services:
       - locust-master
     networks:
       - monitoring
-      
+
   fastapi:
     container_name: fastapi
     hostname: fastapi
@@ -489,8 +496,8 @@ services:
     image: grafana/alloy:latest
     container_name: alloy
     command:
-      - run 
-      # - --server.http.listen-addr=0.0.0.0:12345
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
       - --storage.path=/data-alloy
       - --disable-reporting=true
       - /etc/alloy/config.alloy
@@ -498,7 +505,37 @@ services:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - ./alloy/data-alloy:/data-alloy
     ports:
-      - "12345:12345"     # Alloy HTTP endpoint
+      - "12345:12345" # Alloy HTTP endpoint
     restart: unless-stopped
+    networks:
+      - monitoring
+
+  fastapi-alloy:
+    container_name: fastapi-alloy
+    hostname: fastapi-alloy
+    build: ./fastapi-alloy/
+    ports:
+      - 8002:8000
+    environment:
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: prometheus
+      OTEL_SERVICE_NAME: fastapi-alloy
+      OTEL_EXPORTER_OTLP_ENDPOINT: alloy:12345
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      POSTGRES_USER: fastapiuser
+      POSTGRES_PASSWORD: fastapipass
+      POSTGRES_DB: fastapidb
+      POSTGRES_SERVER: postgres
+      REDIS_SERVER: redis
+      OTEL_RESOURCE_ATTRIBUTES: "host.name=fastapi"
+      OTEL_PYTHON_LOG_CORRELATION: true
+      OTEL_PYTHON_LOG_FORMAT: time="%(asctime)s" level="%(levelname)s" name="%(name)s" filename="%(filename)s:%(lineno)d" trace_id=%(otelTraceID)s span_id=%(otelSpanID)s trace_flags=%(otelTraceSampled)02d resource.service.name=%(otelServiceName)s msg="%(message)s"
+
+    depends_on:
+      - alloy
+    command:
+      - opentelemetry-instrument
+      - python
+      - main.py
     networks:
       - monitoring
