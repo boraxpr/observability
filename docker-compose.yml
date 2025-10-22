@@ -334,6 +334,8 @@ services:
     ports:
       - "14269:14269"
       - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
     volumes:
       - "./jaeger/jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
       - "./jaeger/data/:/badger/"
@@ -351,19 +353,19 @@ services:
     networks:
       - monitoring
 
-  otel-collector:
-    container_name: otel-collector
-    image: otel/opentelemetry-collector-contrib:0.136.0
-    volumes:
-      - "./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml"
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "8889:8889"
-    depends_on:
-      - jaeger
-    networks:
-      - monitoring
+  # otel-collector:
+  #   container_name: otel-collector
+  #   image: otel/opentelemetry-collector-contrib:0.136.0
+  #   volumes:
+  #     - "./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml"
+  #   ports:
+  #     - "4317:4317"
+  #     - "4318:4318"
+  #     - "8889:8889"
+  #   depends_on:
+  #     - jaeger
+  #   networks:
+  #     - monitoring
 
   hotrod:
     container_name: hotrod
