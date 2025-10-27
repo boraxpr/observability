@@ -372,7 +372,8 @@ services:
     hostname: hotrod
     image: jaegertracing/example-hotrod:1.73.0
     depends_on:
-      - otel-collector
+      # - otel-collector
+      - alloy
     ports:
       - "8088:8080"
     command:
@@ -381,7 +382,8 @@ services:
       - --fix-route-worker-pool-size=10
       - --fix-db-query-delay=100ms
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:12345
     networks:
       - monitoring
 
@@ -425,35 +427,35 @@ services:
     networks:
       - monitoring
 
-  fastapi:
-    container_name: fastapi
-    hostname: fastapi
-    build: ./python-fastapi/
-    ports:
-      - 8001:8000
-    environment:
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: prometheus
-      OTEL_SERVICE_NAME: fastapi
-      OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
-      OTEL_EXPORTER_OTLP_INSECURE: true
-      POSTGRES_USER: fastapiuser
-      POSTGRES_PASSWORD: fastapipass
-      POSTGRES_DB: fastapidb
-      POSTGRES_SERVER: postgres
-      REDIS_SERVER: redis
-      OTEL_RESOURCE_ATTRIBUTES: "host.name=fastapi"
-      OTEL_PYTHON_LOG_CORRELATION: true
-      OTEL_PYTHON_LOG_FORMAT: time="%(asctime)s" level="%(levelname)s" name="%(name)s" filename="%(filename)s:%(lineno)d" trace_id=%(otelTraceID)s span_id=%(otelSpanID)s trace_flags=%(otelTraceSampled)02d resource.service.name=%(otelServiceName)s msg="%(message)s"
+  # fastapi:
+  #   container_name: fastapi
+  #   hostname: fastapi
+  #   build: ./python-fastapi/
+  #   ports:
+  #     - 8001:8000
+  #   environment:
+  #     OTEL_TRACES_EXPORTER: otlp
+  #     OTEL_METRICS_EXPORTER: prometheus
+  #     OTEL_SERVICE_NAME: fastapi
+  #     OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+  #     OTEL_EXPORTER_OTLP_INSECURE: true
+  #     POSTGRES_USER: fastapiuser
+  #     POSTGRES_PASSWORD: fastapipass
+  #     POSTGRES_DB: fastapidb
+  #     POSTGRES_SERVER: postgres
+  #     REDIS_SERVER: redis
+  #     OTEL_RESOURCE_ATTRIBUTES: "host.name=fastapi"
+  #     OTEL_PYTHON_LOG_CORRELATION: true
+  #     OTEL_PYTHON_LOG_FORMAT: time="%(asctime)s" level="%(levelname)s" name="%(name)s" filename="%(filename)s:%(lineno)d" trace_id=%(otelTraceID)s span_id=%(otelSpanID)s trace_flags=%(otelTraceSampled)02d resource.service.name=%(otelServiceName)s msg="%(message)s"
 
-    depends_on:
-      - otel-collector
-    command:
-      - opentelemetry-instrument
-      - python
-      - main.py
-    networks:
-      - monitoring
+  #   depends_on:
+  #     - otel-collector
+  #   command:
+  #     - opentelemetry-instrument
+  #     - python
+  #     - main.py
+  #   networks:
+  #     - monitoring
 
   k6:
     container_name: k6
