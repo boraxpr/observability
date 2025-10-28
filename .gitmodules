@@ -1,0 +1,6 @@
+[submodule "springboot-otel-agent/springboot-otel-agent"]
+	path = springboot-otel-agent/springboot-otel-agent
+	url = git@github.com:boraxpr/springboot-devstarter.git
+[submodule "springboot-otel-agent"]
+	path = springboot-otel-agent
+	url = git@github.com:boraxpr/springboot-devstarter.git
