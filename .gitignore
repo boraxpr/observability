@@ -10,3 +10,4 @@ __pycache__
 *.tfstate*
 .terraform*
 node_modules
+openwebui

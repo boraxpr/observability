@@ -334,8 +334,8 @@ services:
     ports:
       - "14269:14269"
       - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
+      # - "4317:4317"
+      # - "4318:4318"
     volumes:
       - "./jaeger/jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
       - "./jaeger/data/:/badger/"
@@ -353,27 +353,26 @@ services:
     networks:
       - monitoring
 
-  # otel-collector:
-  #   container_name: otel-collector
-  #   image: otel/opentelemetry-collector-contrib:0.136.0
-  #   volumes:
-  #     - "./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml"
-  #   ports:
-  #     - "4317:4317"
-  #     - "4318:4318"
-  #     - "8889:8889"
-  #   depends_on:
-  #     - jaeger
-  #   networks:
-  #     - monitoring
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:0.136.0
+    volumes:
+      - "./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml"
+    ports:
+      # - "4317:4317"
+      # - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - jaeger
+    networks:
+      - monitoring
 
   hotrod:
     container_name: hotrod
     hostname: hotrod
     image: jaegertracing/example-hotrod:1.73.0
     depends_on:
-      # - otel-collector
-      - alloy
+      - otel-collector
     ports:
       - "8088:8080"
     command:
@@ -382,8 +381,7 @@ services:
       - --fix-route-worker-pool-size=10
       - --fix-db-query-delay=100ms
     environment:
-      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:12345
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     networks:
       - monitoring
 
@@ -427,35 +425,35 @@ services:
     networks:
       - monitoring
 
-  # fastapi:
-  #   container_name: fastapi
-  #   hostname: fastapi
-  #   build: ./python-fastapi/
-  #   ports:
-  #     - 8001:8000
-  #   environment:
-  #     OTEL_TRACES_EXPORTER: otlp
-  #     OTEL_METRICS_EXPORTER: prometheus
-  #     OTEL_SERVICE_NAME: fastapi
-  #     OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
-  #     OTEL_EXPORTER_OTLP_INSECURE: true
-  #     POSTGRES_USER: fastapiuser
-  #     POSTGRES_PASSWORD: fastapipass
-  #     POSTGRES_DB: fastapidb
-  #     POSTGRES_SERVER: postgres
-  #     REDIS_SERVER: redis
-  #     OTEL_RESOURCE_ATTRIBUTES: "host.name=fastapi"
-  #     OTEL_PYTHON_LOG_CORRELATION: true
-  #     OTEL_PYTHON_LOG_FORMAT: time="%(asctime)s" level="%(levelname)s" name="%(name)s" filename="%(filename)s:%(lineno)d" trace_id=%(otelTraceID)s span_id=%(otelSpanID)s trace_flags=%(otelTraceSampled)02d resource.service.name=%(otelServiceName)s msg="%(message)s"
+  fastapi:
+    container_name: fastapi
+    hostname: fastapi
+    build: ./python-fastapi/
+    ports:
+      - 8001:8000
+    environment:
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: prometheus
+      OTEL_SERVICE_NAME: fastapi
+      OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      POSTGRES_USER: fastapiuser
+      POSTGRES_PASSWORD: fastapipass
+      POSTGRES_DB: fastapidb
+      POSTGRES_SERVER: postgres
+      REDIS_SERVER: redis
+      OTEL_RESOURCE_ATTRIBUTES: "host.name=fastapi"
+      OTEL_PYTHON_LOG_CORRELATION: true
+      OTEL_PYTHON_LOG_FORMAT: time="%(asctime)s" level="%(levelname)s" name="%(name)s" filename="%(filename)s:%(lineno)d" trace_id=%(otelTraceID)s span_id=%(otelSpanID)s trace_flags=%(otelTraceSampled)02d resource.service.name=%(otelServiceName)s msg="%(message)s"
 
-  #   depends_on:
-  #     - otel-collector
-  #   command:
-  #     - opentelemetry-instrument
-  #     - python
-  #     - main.py
-  #   networks:
-  #     - monitoring
+    depends_on:
+      - otel-collector
+    command:
+      - opentelemetry-instrument
+      - python
+      - main.py
+    networks:
+      - monitoring
 
   k6:
     container_name: k6
@@ -499,9 +497,10 @@ services:
   alloy:
     image: grafana/alloy:latest
     container_name: alloy
+    hostname: alloy
     command:
       - run
-      - --server.http.listen-addr=0.0.0.0:12345
+      - --server.http.listen-addr=0.0.0.0:12344
       - --storage.path=/data-alloy
       - --disable-reporting=true
       - /etc/alloy/config.alloy
@@ -509,11 +508,52 @@ services:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - ./alloy/data-alloy:/data-alloy
     ports:
-      - "12345:12345" # Alloy HTTP endpoint
+      - "12344:12344" # Alloy HTTP endpoint
+      - "4318:4318"
     restart: unless-stopped
     networks:
       - monitoring
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: openwebui
+    hostname: openwebui
+    ports:
+      - "8080:8080"
+    environment:
+      ENABLE_OTEL: true
+      ENABLE_OTEL_TRACES: false
+      ENABLE_OTEL_METRICS: true
+      ENABLE_OTEL_LOGS: true
+        # Force HTTP protocol
+      OTEL_OTLP_SPAN_EXPORTER: http
+      OTEL_METRICS_OTLP_SPAN_EXPORTER: http
+      OTEL_LOGS_OTLP_SPAN_EXPORTER: http
+      OTEL_TRACES_OTLP_SPAN_EXPORTER: http
 
+  # Direct each exporter to Alloy's final OTLP HTTP endpoints
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_METRICS_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/metrics
+      OTEL_LOGS_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/logs
+      OTEL_TRACES_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/traces
+
+  # Optional but recommended
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      OTEL_METRICS_EXPORTER_OTLP_INSECURE: true
+      OTEL_LOGS_EXPORTER_OTLP_INSECURE: true
+      OTEL_TRACES_EXPORTER_OTLP_INSECURE: true
+
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_RESOURCE_ATTRIBUTES: service.name=openwebui
+
+    depends_on:
+      - alloy
+    volumes:
+      - ./openwebui:/app/backend/data
+    networks:
+      - monitoring
   fastapi-alloy:
     container_name: fastapi-alloy
     hostname: fastapi-alloy
@@ -524,7 +564,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: prometheus
       OTEL_SERVICE_NAME: fastapi-alloy
-      OTEL_EXPORTER_OTLP_ENDPOINT: alloy:12345
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:12344
       OTEL_EXPORTER_OTLP_INSECURE: true
       POSTGRES_USER: fastapiuser
       POSTGRES_PASSWORD: fastapipass

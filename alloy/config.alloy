@@ -1,69 +1,52 @@
-prometheus.exporter.self "default" {
-}
+otelcol.receiver.otlp "openwebui" {
+  http {
+    
+  }
 
-prometheus.scrape "metamonitoring" {
-  targets    = prometheus.exporter.self.default.targets
-  forward_to = [prometheus.remote_write.default.receiver]
-}
+  grpc {
 
-prometheus.remote_write "default" {
-  endpoint {
-    url = "http://prometheus:9090/api/v1/write"
+  }
+
+  output {
+    metrics = [otelcol.processor.batch.openwebui.input]
+    logs    = [otelcol.processor.batch.openwebui.input]
+    traces  = [otelcol.processor.batch.openwebui.input]
   }
 }
 
-logging {
-  level    = "info"
-  format   = "json"
-  write_to = [loki.write.default.receiver]
-}
-
-loki.write "default" {
-  endpoint {
-    url = "http://loki:3100/loki/api/v1/push"
+otelcol.processor.batch "openwebui" {
+  output {
+    metrics = [otelcol.exporter.prometheus.openwebui.input]
+    logs    = [otelcol.exporter.loki.openwebui.input]
+    traces  = [otelcol.exporter.otlp.openwebui.input]
   }
 }
 
-otelcol.receiver.otlp "app1" {
-    http {
-        endpoint = "0.0.0.0:8002"
-  }
-  	output {
-		metrics = [otelcol.processor.batch.app1.input]
-		logs    = [otelcol.processor.batch.app1.input]
-		traces  = [otelcol.processor.batch.app1.input]
-	}
+otelcol.exporter.loki "openwebui" {
+  forward_to = [loki.write.openwebui.receiver]
 }
 
-otelcol.processor.batch "app1" {
-  	output {
-		metrics = [otelcol.exporter.otlp.app1.input]
-		logs    = [otelcol.exporter.otlp.app1.input]
-		traces  = [otelcol.exporter.otlp.app1.input]
-	}
-}
-
-otelcol.exporter.loki "app1" {
-  forward_to = [loki.write.app1.receiver]
-}
-
-loki.write "app1" {
+loki.write "openwebui" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
   }
 }
 
-otelcol.exporter.prometheus "app1" {
-  forward_to = [prometheus.remote_write.app1.receiver]
+otelcol.exporter.prometheus "openwebui" {
+  forward_to = [prometheus.remote_write.openwebui.receiver]
 }
 
-prometheus.remote_write "app1" {
+prometheus.remote_write "openwebui" {
+  external_labels = {
+    job = "openwebui",
+    instance = "alloy",
+  }
   endpoint {
     url = "http://prometheus:9090/api/v1/write"
   }
 }
 
-otelcol.exporter.otlp "app1" {
+otelcol.exporter.otlp "openwebui" {
   client {
     endpoint = "http://jaeger:4318"
     tls {

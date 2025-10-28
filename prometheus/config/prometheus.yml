@@ -119,7 +119,7 @@ scrape_configs:
   - job_name: "fastapi"
     static_configs:
       - targets:
-        - "fastapi:8000"
+        - "fastapi-alloy:8000"
         
   - job_name: "locust-exporter"
     scrape_interval: 1s
