@@ -330,14 +330,15 @@ services:
   jaeger:
     container_name: jaeger
     image: jaegertracing/all-in-one:1.73.0
+    user: "1000:1000"
     ports:
       - "14269:14269"
       - "16686:16686"
-      - "43171:4317"
-      - "43181:4318"
+      # - "4317:4317"
+      # - "4318:4318"
     volumes:
       - "./jaeger/jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
-      - "./jaeger/data/:/badger"
+      - "./jaeger/data/:/badger/"
     environment:
       QUERY_UI_CONFIG: /etc/jaeger/jaeger-ui.json
       LOG_LEVEL: debug
@@ -519,31 +520,29 @@ services:
     ports:
       - "8080:8080"
     environment:
-    # Openwebui is not fully-usable on cloudshell because the shell blocks websockets
       ENABLE_OTEL: true
-      ENABLE_OTEL_TRACES: true
+      ENABLE_OTEL_TRACES: false
       ENABLE_OTEL_METRICS: true
       ENABLE_OTEL_LOGS: true
         # Force HTTP protocol
-      # OTEL_OTLP_SPAN_EXPORTER: http
-      # OTEL_METRICS_OTLP_SPAN_EXPORTER: http
-      # OTEL_LOGS_OTLP_SPAN_EXPORTER: http
-      # OTEL_TRACES_OTLP_SPAN_EXPORTER: http
+      OTEL_OTLP_SPAN_EXPORTER: http
+      OTEL_METRICS_OTLP_SPAN_EXPORTER: http
+      OTEL_LOGS_OTLP_SPAN_EXPORTER: http
+      OTEL_TRACES_OTLP_SPAN_EXPORTER: http
 
   # Direct each exporter to Alloy's final OTLP HTTP endpoints
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      # OTEL_METRICS_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/metrics
-      # OTEL_LOGS_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/logs
-      # OTEL_TRACES_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/traces
-      OTEL_EXPORTER_OTLP_INSECURE: true
-  # Optional but recommended
-      # OTEL_EXPORTER_OTLP_INSECURE: true
-      # OTEL_METRICS_EXPORTER_OTLP_INSECURE: true
-      # OTEL_LOGS_EXPORTER_OTLP_INSECURE: true
-      # OTEL_TRACES_EXPORTER_OTLP_INSECURE: true
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_METRICS_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/metrics
+      OTEL_LOGS_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/logs
+      OTEL_TRACES_EXPORTER_OTLP_ENDPOINT: http://alloy:4318/v1/traces
 
-      # OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+  # Optional but recommended
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      OTEL_METRICS_EXPORTER_OTLP_INSECURE: true
+      OTEL_LOGS_EXPORTER_OTLP_INSECURE: true
+      OTEL_TRACES_EXPORTER_OTLP_INSECURE: true
+
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
       OTEL_LOGS_EXPORTER: otlp
@@ -584,13 +583,3 @@ services:
       - main.py
     networks:
       - monitoring
-    
-  yacht:
-    image: selfhostedpro/yacht:latest
-    container_name: yacht
-    restart: always
-    ports:
-      - "9001:8000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./yacht:/config
