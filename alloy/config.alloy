@@ -1,52 +1,48 @@
-otelcol.receiver.otlp "openwebui" {
-  http {
-    
-  }
-
-  grpc {
-
-  }
+otelcol.receiver.otlp "main" {
+  http {}
+  grpc {}
 
   output {
-    metrics = [otelcol.processor.batch.openwebui.input]
-    logs    = [otelcol.processor.batch.openwebui.input]
-    traces  = [otelcol.processor.batch.openwebui.input]
+    metrics = [otelcol.processor.batch.main.input]
+    logs    = [otelcol.processor.batch.main.input]
+    traces  = [otelcol.processor.batch.main.input]
   }
 }
 
-otelcol.processor.batch "openwebui" {
+otelcol.processor.batch "main" {
   output {
-    metrics = [otelcol.exporter.prometheus.openwebui.input]
-    logs    = [otelcol.exporter.loki.openwebui.input]
-    traces  = [otelcol.exporter.otlp.openwebui.input]
+    metrics = [otelcol.exporter.prometheus.main.input]
+    logs    = [otelcol.exporter.loki.main.input]
+    traces  = [otelcol.exporter.otlp.main.input]
   }
 }
 
-otelcol.exporter.loki "openwebui" {
-  forward_to = [loki.write.openwebui.receiver]
+otelcol.exporter.loki "main" {
+  forward_to = [loki.write.main.receiver]
 }
 
-loki.write "openwebui" {
+loki.write "main" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
   }
 }
 
-otelcol.exporter.prometheus "openwebui" {
-  forward_to = [prometheus.remote_write.openwebui.receiver]
+otelcol.exporter.prometheus "main" {
+  forward_to = [prometheus.remote_write.main.receiver]
 }
 
-prometheus.remote_write "openwebui" {
+prometheus.remote_write "main" {
   external_labels = {
-    job = "openwebui",
+    job      = "otel-alloy",
     instance = "alloy",
   }
+
   endpoint {
     url = "http://prometheus:9090/api/v1/write"
   }
 }
 
-otelcol.exporter.otlp "openwebui" {
+otelcol.exporter.otlp "main" {
   client {
     endpoint = "jaeger:4317"
     tls {

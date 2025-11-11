@@ -1,5 +1,6 @@
 networks:
   monitoring:
+    name: observability_monitoring
     driver: bridge
 
 services:
@@ -508,7 +509,6 @@ services:
       - ./alloy/data-alloy:/data-alloy
     ports:
       - "12344:12344" # Alloy HTTP endpoint
-      - "4318:4318"
     restart: unless-stopped
     networks:
       - monitoring
@@ -594,3 +594,33 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./yacht:/config
+
+  springboot-otel-agent:
+    image: eclipse-temurin:21-jdk-alpine
+    container_name: springboot-otel-agent
+    working_dir: /app
+    entrypoint: ["/opt/java/openjdk/bin/java"]
+    command:
+      [
+        "-javaagent:/app/opentelemetry-javaagent.jar",
+        "-Dotel.javaagent.configuration-file=/app/telemetry.properties",
+        "-jar",
+        "/app/demo-0.0.1-SNAPSHOT.jar"
+      ]
+    volumes:
+      - ./springboot-otel-agent/target/demo-0.0.1-SNAPSHOT.jar:/app/demo-0.0.1-SNAPSHOT.jar
+      - ./springboot-otel-agent/opentelemetry-javaagent.jar:/app/opentelemetry-javaagent.jar
+      - ./springboot-otel-agent/telemetry.properties:/app/telemetry.properties
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fastapidb
+      SPRING_DATASOURCE_USERNAME: fastapiuser
+      SPRING_DATASOURCE_PASSWORD: fastapipass
+      SPRING_PROFILES_ACTIVE: docker
+      OTEL_JAVAAGENT_CONFIGURATION_FILE: /app/telemetry.properties
+    ports:
+      - "8085:8080"
+    depends_on:
+      - postgres
+      - alloy
+    networks:
+      - monitoring
