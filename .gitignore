@@ -11,3 +11,5 @@ __pycache__
 .terraform*
 node_modules
 openwebui
+yacht/data.sqlite
+springboot-otel-agent
