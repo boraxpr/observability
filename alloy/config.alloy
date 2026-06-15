@@ -9,7 +9,55 @@ otelcol.receiver.otlp "main" {
   }
 }
 
+otelcol.receiver.otlp "main" {
+	http { }
+
+	grpc { }
+
+	output {
+		logs    = [otelcol.processor.memory_limiter.main.input]
+		metrics = [otelcol.processor.memory_limiter.main.input]
+		traces  = [otelcol.processor.memory_limiter.main.input]
+	}
+}
+
+otelcol.processor.memory_limiter "main" {
+	check_interval = "1s"
+
+	limit_percentage       = 80
+	spike_limit_percentage = 20
+
+	output {
+		metrics = [otelcol.processor.batch.main.input]
+		logs    = [otelcol.processor.batch.main.input]
+		traces  = [otelcol.processor.tail_sampling.main.input]
+	}
+}
+
+otelcol.processor.tail_sampling "main" {
+  decision_wait            = "10s"
+  num_traces               = 50000
+
+  policy {
+    name = "keep-errors"
+    type = "status_code"
+    status_code { status_codes = ["ERROR"] }
+  }
+
+  policy {
+    name       = "sample-ok-traces"
+    type       = "probabilistic"
+    probabilistic { sampling_percentage = 10 }  // เก็บแค่ 10% ของ traces ที่ OK
+  }
+
+  output {
+    traces = [otelcol.processor.batch.main.input]
+  }
+}
+
 otelcol.processor.batch "main" {
+	send_batch_size     = 500
+	send_batch_max_size = 1000
   output {
     metrics = [otelcol.exporter.prometheus.main.input]
     logs    = [otelcol.exporter.loki.main.input]
