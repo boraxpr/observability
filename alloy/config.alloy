@@ -1,12 +1,21 @@
-otelcol.receiver.otlp "main" {
-  http {}
-  grpc {}
+// META MONITORING 
+// NOTE: DISABLE PROMETHEUS SELF METRICS FROM ALLOY (PUSH) IF USING NATIVE PROMETHEUS SERVICE DISCOVERY (PULL)
+// prometheus.exporter.self "alloy" { }
 
-  output {
-    metrics = [otelcol.processor.batch.main.input]
-    logs    = [otelcol.processor.batch.main.input]
-    traces  = [otelcol.processor.batch.main.input]
-  }
+// prometheus.scrape "alloy" {
+// 	targets    = prometheus.exporter.self.alloy.targets
+// 	forward_to = [otelcol.receiver.prometheus.alloy.receiver]
+// }
+// CONVERTER COMPONENT Prometheus -to- OTEL READ: https://grafana.com/docs/agent/latest/flow/reference/components/otelcol.receiver.prometheus/
+// otelcol.receiver.prometheus "alloy" {
+// 	output {
+// 		metrics = [otelcol.processor.batch.main.input]
+// 	}
+// }
+
+// MAIN PIPELINE
+livedebugging {
+	enabled = true
 }
 
 otelcol.receiver.otlp "main" {
@@ -28,73 +37,75 @@ otelcol.processor.memory_limiter "main" {
 	spike_limit_percentage = 20
 
 	output {
-		metrics = [otelcol.processor.batch.main.input]
-		logs    = [otelcol.processor.batch.main.input]
-		traces  = [otelcol.processor.tail_sampling.main.input]
+		metrics = [otelcol.processor.filter.drop_noise.input]
+		logs    = [otelcol.processor.filter.drop_noise.input]
+		traces  = [otelcol.processor.filter.drop_noise.input]
 	}
 }
 
-otelcol.processor.tail_sampling "main" {
-  decision_wait            = "10s"
-  num_traces               = 50000
+otelcol.processor.filter "drop_noise" {
+	error_mode = "ignore"
+	// Drop noise from logs
+	logs {
+		log_record = [
+			`IsString(body) and IsMatch(body, ".*_app.*")`,
+			`IsString(body) and IsMatch(body, "/api/v1/models/model/profile/image")`,
+			`IsString(body) and IsMatch(body, ".*static.*")`,
+			// DROP HEALTH CHECKS
+			`IsString(body) and IsMatch(body, "HEAD / ")`,
+			`IsString(body) and IsMatch(body, "GET /api/version")`,
+		]
+	}
 
-  policy {
-    name = "keep-errors"
-    type = "status_code"
-    status_code { status_codes = ["ERROR"] }
-  }
-
-  policy {
-    name       = "sample-ok-traces"
-    type       = "probabilistic"
-    probabilistic { sampling_percentage = 10 }  // เก็บแค่ 10% ของ traces ที่ OK
-  }
-
-  output {
-    traces = [otelcol.processor.batch.main.input]
-  }
+	output {
+		logs    = [otelcol.processor.batch.main.input]
+		metrics = [otelcol.processor.batch.main.input]
+		traces  = [otelcol.processor.batch.main.input]
+	}
 }
 
 otelcol.processor.batch "main" {
 	send_batch_size     = 500
 	send_batch_max_size = 1000
-  output {
-    metrics = [otelcol.exporter.prometheus.main.input]
-    logs    = [otelcol.exporter.loki.main.input]
-    traces  = [otelcol.exporter.otlp.main.input]
-  }
+
+	output {
+		metrics = [otelcol.exporter.prometheus.main.input]
+		logs    = [otelcol.exporter.loki.main.input]
+		traces  = [otelcol.exporter.otlp.tempo.input]
+	}
 }
 
 otelcol.exporter.loki "main" {
-  forward_to = [loki.write.main.receiver]
+	forward_to = [loki.write.main.receiver]
+}
+
+loki.source.kubernetes_events "event" {
+	forward_to = [loki.write.main.receiver]
 }
 
 loki.write "main" {
-  endpoint {
-    url = "http://loki:3100/loki/api/v1/push"
-  }
+	endpoint {
+		url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+	}
 }
 
 otelcol.exporter.prometheus "main" {
-  forward_to = [prometheus.remote_write.main.receiver]
+	forward_to = [prometheus.remote_write.main.receiver]
 }
 
 prometheus.remote_write "main" {
-  external_labels = {
-    job      = "otel-alloy",
-    instance = "alloy",
-  }
-
-  endpoint {
-    url = "http://prometheus:9090/api/v1/write"
-  }
+	endpoint {
+		url = "http://prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+	}
 }
 
-otelcol.exporter.otlp "main" {
-  client {
-    endpoint = "jaeger:4317"
-    tls {
-      insecure = true
-    }
-  }
+otelcol.exporter.otlp "tempo" {
+	client {
+		endpoint = "http://tempo.monitoring.svc.cluster.local:4317"
+
+		tls {
+			insecure             = true
+			insecure_skip_verify = true
+		}
+	}
 }
