@@ -1,0 +1,36 @@
+tempo:
+  metricsGenerator:
+    enabled: true
+    remoteWriteUrl: http://prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+  storage:
+    trace:
+      backend: XXXXX
+      azure:
+        container_name: tempo
+        storage_account_name: ${STORAGE_ACCOUNT_NAME}
+        storage_account_key: ${STORAGE_ACCOUNT_KEY}
+  extraArgs:
+    config.expand-env: true
+  extraEnv:
+    - name: STORAGE_ACCOUNT_NAME
+      valueFrom:
+        secretKeyRef:
+          name: XXXXXXXXXX
+          key: XXXXXXXXX
+    - name: STORAGE_ACCOUNT_KEY
+      valueFrom:
+        secretKeyRef:
+          name: XXXXXXXXX
+          key: XXXXXXXX
+  retention: 168h
+  overrides:
+    defaults:
+      ingestion:
+        rate_limit_bytes: 100000000
+        burst_size_bytes: 100000000
+      global:
+        max_bytes_per_trace: 60000000
+service:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3200"
